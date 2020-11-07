@@ -19,6 +19,9 @@ def node_durations_and_run_times(node: pipelines.Node) -> {tuple: [float, float]
         A dictionary of {(node_path,): [avg_duration, avg_run_time]} entries for all children of `node`
 
     """
+    if 'mara' not in mara_db.config.databases():
+        return {}
+
     with mara_db.postgresql.postgres_cursor_context('mara') as cursor:
         cursor.execute(f"""
 WITH child_nodes AS
