@@ -4,6 +4,7 @@ import psycopg2.extensions
 import sqlalchemy.orm
 from sqlalchemy.ext.declarative import declarative_base
 
+import mara_db.config
 import mara_db.postgresql
 from .. import config
 from ..logging import pipeline_events, system_statistics
@@ -73,6 +74,10 @@ def close_open_run_after_error(run_id: int):
     """Closes all open run and node_run for this run_id as failed"""
     if run_id is None:
         return
+
+    if 'mara' not in mara_db.config.databases():
+        return
+
     _close_run = f'''
 UPDATE  data_integration_run
 SET end_time = now(), succeeded = FALSE
@@ -103,6 +108,8 @@ class RunLogger(events.EventHandler):
     node_output: {tuple: [pipeline_events.Output]} = None
 
     def handle_event(self, event: events.Event):
+        if 'mara' not in mara_db.config.databases():
+            return
 
         if isinstance(event, pipeline_events.RunStarted):
             with mara_db.postgresql.postgres_cursor_context('mara') as cursor:  # type: psycopg2.extensions.cursor
